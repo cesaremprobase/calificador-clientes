@@ -1,4 +1,4 @@
-import { UserSessionState } from "../types";
+import { UserSessionState, QuestionOption } from "../types";
 
 class SessionStore {
   private sessions = new Map<number, UserSessionState>();
@@ -32,7 +32,7 @@ class SessionStore {
   saveAnswer(
     chatId: number,
     questionId: string,
-    option: { optionId: string; label: string; points: number },
+    option: QuestionOption,
     nextQuestionIndex: number
   ): UserSessionState {
     const session = this.getSession(chatId) || this.createOrResetSession(chatId);

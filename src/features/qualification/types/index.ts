@@ -25,7 +25,7 @@ export interface QualificationConfig {
 export interface UserSessionState {
   chatId: number;
   currentQuestionIndex: number;
-  answers: Record<string, { optionId: string; label: string; points: number }>;
+  answers: Record<string, QuestionOption>;
   score: number;
   updatedAt: number;
 }
