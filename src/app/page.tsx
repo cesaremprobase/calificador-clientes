@@ -13,13 +13,13 @@ export default function Home() {
         <header className="border-b border-slate-800 pb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-400 text-xs font-semibold uppercase tracking-wider mb-3 border border-blue-500/20">
-              <Bot className="w-4 h-4" /> SaaS Lead Qualification
+              <Bot className="w-4 h-4" /> Asistente de Crédito Vehicular
             </div>
             <h1 className="text-3xl md:text-5xl font-black tracking-tight text-white">
-              Calificador Omnicanal Telegram → WhatsApp
+              Precalificador Vehicular Telegram → WhatsApp
             </h1>
             <p className="text-slate-400 mt-2 text-base md:text-lg">
-              Filtra prospectos automáticamente con botones interactivos y enruta solo clientes viables.
+              Filtra y clasifica prospectos en automático: Crédito Bancario vs Financiamiento Directo (con Infocorp).
             </p>
           </div>
 
@@ -84,7 +84,7 @@ export default function Home() {
           <div className="flex items-center justify-between border-b border-slate-700/50 pb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-blue-400" />
-              Flujo de Preguntas Configurado (B2B Services)
+              Flujo de Precalificación Vehicular (Perú)
             </h2>
             <span className="text-xs text-slate-400 font-mono">/api/telegram/webhook</span>
           </div>

@@ -1,93 +1,67 @@
-# BUSINESS_LOGIC.md - SaaS de Calificación y Enrutamiento de Clientes
+# BUSINESS_LOGIC.md - SaaS de Precalificación Vehicular (Telegram → WhatsApp)
 
-## 1. Visión del Producto
-Plataforma SaaS que automatiza la precalificación de prospectos entrantes a través de mensajería (Telegram inicialmente, extensible a WhatsApp) mediante flujos interactivos guiados por botones, transfiriendo a los prospectos calificados directamente al WhatsApp comercial del negocio con su contexto precargado.
-
-Diseñado con enfoque **Config-Driven** (basado en configuración/datos) para replicarse en múltiples giros de negocio sin tocar código.
+## 1. Visión del Negocio
+Embudo automatizado de precalificación para empresas y asesores de **financiamiento vehicular** en Perú. Recibe prospectos provenientes de campañas (Facebook Ads / Instagram / TikTok) y realiza un triaje ágil en Telegram antes de derivarlos al WhatsApp Business del asesor con su ficha completa de crédito.
 
 ---
 
-## 2. Arquitectura de Dominio (Hexagonal / Desacoplada)
+## 2. Segmentación de Rutas de Financiamiento
 
+A diferencia de un banco tradicional, el negocio atiende a **ambos perfiles**:
+1. **Ruta Bancaria / Cajas (Sin reporte negativo):**
+   - Para clientes 100% limpios o con deudas al día.
+   - Acceso a tasas competitivas bancarias.
+2. **Ruta Financiamiento Directo / Alternativo (Con reporte en Infocorp):**
+   - Para clientes con deudas castigadas o historial crediticio manchado.
+   - Requiere cuota inicial mínima (desde S/ 5,000 en adelante) para mitigar riesgo.
+
+---
+
+## 3. Cuestionario Interactivo (6 Pasos Ágiles)
+
+1. **Tipo de Solicitante:**
+   - 👤 Persona Natural (+20 pts)
+   - 🏢 Como Empresa (RUC 20) (+25 pts)
+2. **Situación Laboral e Ingresos:**
+   - 📄 En Planilla (con boletas) (+25 pts)
+   - 💼 Independiente / Negocio (RUC) (+25 pts)
+   - 💵 Ingresos en efectivo / Sin sustento formal (+15 pts)
+3. **Historial en Infocorp:**
+   - ✅ 100% Limpio / Al día (+25 pts)
+   - ⚖️ Con deudas en bancos pero al día (+20 pts)
+   - ⚠️ Con reporte en Infocorp (+15 pts) *(Activa ruta alternativa)*
+4. **Capital para Cuota Inicial:**
+   - Menos de S/ 5,000 (0 pts - Requiere ahorro previo)
+   - S/ 5,000 a S/ 15,000 (+20 pts)
+   - S/ 15,000 a S/ 30,000 (+25 pts)
+   - Más de S/ 30,000 (+30 pts)
+5. **Preferencia de Transmisión:**
+   - 🚗 Automática (+10 pts)
+   - ⚙️ Mecánica (+10 pts)
+   - 🔄 Abierto a ambas (+10 pts)
+6. **Urgencia de Compra:**
+   - 🚀 De inmediato (este mes) (+20 pts)
+   - 📅 Próximos 2 a 3 meses (+15 pts)
+   - 🔍 Solo cotizando información (+5 pts)
+
+---
+
+## 4. Regla de Handoff a WhatsApp
+
+### Calificado (Score >= 50 y Cuota Inicial >= S/ 5,000)
+El bot genera el botón con mensaje precargado para el asesor:
 ```
-[ Canal: Telegram Bot ]  ───┐
-                            ├──► [ Adaptador de Canal ] ──► [ Motor de Calificación ]
-[ Canal: WhatsApp API ]  ───┘        (Normalizador)            (Agnóstico / Core)
-                                                                     │
-                                                                     ▼
-                                                         [ Evaluación de Puntaje ]
-                                                                     │
-                                             ┌───────────────────────┴───────────────────────┐
-                                             ▼                                               ▼
-                                      [ CALIFICADO ]                                 [ DESCALIFICADO ]
-                                      (Score >= 60)                                   (Score < 60)
-                                             │                                               │
-                                 Genera link directo a                        Mensaje de despedida
-                                 WhatsApp con resumen                         o recursos generales
+Hola, completé la precalificación vehicular en el bot.
+
+📋 PERFIL DEL SOLICITANTE:
+- Persona Natural
+- En Planilla (Boletas de pago)
+- 100% Limpio / Al día
+- S/ 15,000 a S/ 30,000
+- Automática
+- De inmediato (este mes)
+
+🎯 Ruta: Crédito Tradicional Bancario / Caja
+
+Deseo que me contacte un asesor para ver las unidades y cuotas disponibles.
 ```
-
----
-
-## 3. Flujo Inicial y Mensaje de Bienvenida (`/start`)
-
-Cuando el usuario inicia el bot o envía el comando `/start`:
-- **Mensaje:**
-  > *"¡Hola! 👋 Bienvenido a nuestro asistente de atención rápida.\n\nPara poder brindarte la mejor asesoría y conectarte con el especialista indicado, te haremos 3 preguntas rápidas (toma menos de 1 minuto)."*
-- **Acción:**
-  - Botón interactivo: `[ Comenzar Evaluación 🚀 ]` (o despliegue directo de la Pregunta 1).
-
----
-
-## 4. Esquema Configurable de Calificación (Ajustado)
-
-### Criterio de Corte
-- **Puntaje mínimo aprobatorio:** **60 / 100 puntos** (permite captar clientes interesados con dudas o ticket inicial).
-
-### Preguntas del Flujo:
-
-1. **Pregunta 1: Tipo de Requerimiento**
-   - *Opciones:*
-     - A) Proyecto o servicio nuevo (+30 pts)
-     - B) Mejora / Optimización de algo existente (+30 pts)
-     - C) Solo busco asesoría o resolver dudas (+15 pts)
-
-2. **Pregunta 2: Rango de Presupuesto Estimado**
-   - *Opciones:*
-     - A) Menos de $10 USD (0 pts - Por debajo del umbral mínimo de atención)
-     - B) $10 a $50 USD (+20 pts)
-     - C) $50 a $200 USD (+35 pts)
-     - D) Más de $200 USD (+40 pts)
-
-3. **Pregunta 3: Plazo de Inicio (Urgencia)**
-   - *Opciones:*
-     - A) Inmediato (esta semana o mes) (+30 pts)
-     - B) Próximas semanas (+20 pts)
-     - C) Solo estoy explorando a futuro (+10 pts)
-
----
-
-## 5. Lógica de Enrutamiento y Handoff
-
-### Escenario A: Prospecto Calificado (Puntaje >= 60)
-1. El bot confirma que su solicitud es viable para atención personalizada.
-2. Presenta un botón interactivo: **"💬 Hablar con un Asesor por WhatsApp"**.
-3. El enlace se genera dinámicamente:
-   ```
-   https://wa.me/{WHATSAPP_NUMBER}?text={MENSAJE_CODIFICADO}
-   ```
-   **Contenido del mensaje pre-cargado:**
-   > *"Hola, completé la evaluación en el bot. Mi interés es: [Tipo], presupuesto estimado: [Rango] y plazo: [Plazo]. Deseo coordinar con un asesor."*
-
-### Escenario B: Prospecto No Calificado (Puntaje < 60)
-1. El bot agradece el tiempo educadamente.
-2. Mensaje empático:
-   > *"¡Gracias por tu interés! Por el momento nuestros servicios requieren un presupuesto mínimo a partir de $10 USD. Te invitamos a seguir nuestros canales y recursos para futuras novedades."*
-
----
-
-## 6. Escalabilidad a Nuevos Giros
-Cada cuenta/empresa podrá configurar en su panel:
-- Número de WhatsApp de destino.
-- Mensaje de bienvenida inicial (`/start`).
-- Preguntas, opciones, rangos y puntajes.
-- Umbral de aprobación (por defecto 60).
